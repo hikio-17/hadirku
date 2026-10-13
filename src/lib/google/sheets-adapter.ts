@@ -1,6 +1,6 @@
 import "server-only";
 
-import { google, type sheets_v4 } from "googleapis";
+import { google, type drive_v3, type sheets_v4 } from "googleapis";
 
 import { env } from "@/lib/env";
 import type {
@@ -49,6 +49,13 @@ export function createTenantSheets(accessToken: string): sheets_v4.Sheets {
   const auth = new google.auth.OAuth2();
   auth.setCredentials({ access_token: accessToken });
   return google.sheets({ version: "v4", auth });
+}
+
+/** Client Drive terautentikasi access token milik admin sekolah (upload bukti). */
+export function createTenantDrive(accessToken: string): drive_v3.Drive {
+  const auth = new google.auth.OAuth2();
+  auth.setCredentials({ access_token: accessToken });
+  return google.drive({ version: "v3", auth });
 }
 
 /** Client Sheets via Service Account (hanya untuk REGISTRY milik platform). */

@@ -3,7 +3,7 @@ import "server-only";
 import { auth } from "@/auth";
 import { getTenantContext, type TenantClient } from "@/lib/google/tenant-client";
 import { getGuruProfil } from "@/lib/services/guru";
-import type { GuruRow } from "@/lib/storage/types";
+import type { GuruRow, SiswaRow } from "@/lib/storage/types";
 
 /**
  * Penjaga server-side untuk SEMUA action admin: sesi ada + role admin +
@@ -20,6 +20,28 @@ export async function requireAdmin(): Promise<{ ctx: TenantClient; userId: strin
     throw new Error("Sesi tidak cocok dengan sekolah ini.");
   }
   return { ctx, userId: session.user.id };
+}
+
+/**
+ * Penjaga server-side untuk SEMUA action siswa: sesi role siswa + profil
+ * siswa + konteks tenant milik sekolah sesi.
+ */
+export async function requireSiswa(): Promise<{
+  ctx: TenantClient;
+  siswa: SiswaRow;
+  userId: string;
+}> {
+  const session = await auth();
+  if (!session?.user) throw new Error("Belum login. Silakan masuk dulu.");
+  if (session.user.role !== "siswa") throw new Error("Halaman ini khusus siswa.");
+  const ctx = await getTenantContext(session.user.slug);
+  if (ctx.school.school_id !== session.user.schoolId) {
+    throw new Error("Sesi tidak cocok dengan sekolah ini.");
+  }
+  const { getSiswaProfil } = await import("@/lib/services/siswa");
+  const siswa = await getSiswaProfil(ctx.sheets, ctx.context.spreadsheetId, session.user.id);
+  if (!siswa) throw new Error("Akun belum punya profil siswa. Hubungi admin sekolah.");
+  return { ctx, siswa, userId: session.user.id };
 }
 
 /**

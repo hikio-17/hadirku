@@ -5,9 +5,9 @@ Data tiap sekolah tersimpan di Google Spreadsheet milik sekolah itu sendiri;
 platform hanya menyimpan registry (nama sekolah, email admin, ID sheet, token
 terenkripsi). Bahasa antarmuka: Bahasa Indonesia. Mobile-first.
 
-> Status: **Tahap 6** — export Excel & PDF rekap dengan kop sekolah +
-> pratinjau. Modul Siswa + izin/sakit, halaman privasi, backup, mode
-> self-host menyusul di Tahap 7–9.
+> Status: **Tahap 7** — modul Siswa (beranda %, kalender, riwayat per
+> mapel, izin/sakit + bukti Drive). Privasi, backup, putus koneksi, mode
+> self-host menyusul di Tahap 8–9.
 
 ## Tech stack
 
@@ -100,6 +100,16 @@ mustChange }` — tanpa `password_hash`. Google OAuth tidak lewat Auth.js
   footer pencetak. PDF A4: tabel + nomor halaman + pencetak.
 - Khusus guru di Tahap 6 (data milik penugasannya); ekspor admin
   menyusul Tahap 8 dengan generator yang sama.
+
+## Modul siswa (Tahap 7)
+
+- Beranda `/s/[slug]/siswa`: persentase keseluruhan, hitung H/I/S/A,
+  kalender bulanan (status terberat per tanggal), per mapel, ajukan izin.
+- Izin/sakit `/siswa/izin`: form (tanggal, jenis, alasan min 10) + bukti
+  opsional (jpg/png/pdf ≤2 MB) ke folder Drive sekolah, riwayat status +
+  batalkan selagi menunggu. Anti duplikat pending per tanggal.
+- Riwayat `/siswa/riwayat`: tabel per mapel + 20 catatan terakhir.
+- Persetujuan tetap oleh wali kelas di dashboard guru (Tahap 5).
 
 ## Rotasi kunci enkripsi
 

@@ -33,8 +33,8 @@ export function getNavForRole(role: string, slug: string): NavItem[] {
   if (role === "siswa") {
     return [
       { href: `${base}/siswa`, label: "Beranda", icon: Home },
-      { href: `${base}/siswa/izin`, label: "Izin & Sakit", icon: Inbox, soon: true },
-      { href: `${base}/siswa/riwayat`, label: "Riwayat", icon: History, soon: true },
+      { href: `${base}/siswa/izin`, label: "Izin & Sakit", icon: Inbox },
+      { href: `${base}/siswa/riwayat`, label: "Riwayat", icon: History },
     ];
   }
   return [
