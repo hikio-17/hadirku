@@ -7,6 +7,7 @@ import type { RekapRow } from "@/lib/services/guru";
 import { getKop, periodeLabel } from "./kop";
 import { buildRekapWorkbook } from "./rekap-xlsx";
 import { buildRekapPdf } from "./rekap-pdf";
+import { buildBackupWorkbook } from "./backup";
 
 const KOP = { nama: "SMPN 1 Bandung", alamat: "Jl. Merdeka No. 1" };
 const META = {
@@ -111,5 +112,41 @@ describe("buildRekapPdf", () => {
     expect(text).toContain("REKAP KEHADIRAN SISWA");
     expect(text).toContain("Ani");
     expect(text).toContain("Dicetak oleh Guru Satu");
+  });
+});
+
+describe("buildBackupWorkbook", () => {
+  it("12 tab via SATU batchGet; header fallback bila tab kosong", async () => {
+    const ranges: string[] = [];
+    const fake = {
+      async batchGet(_id: string, rs: string[]) {
+        ranges.push(...rs);
+        return rs.map((range) => {
+          const sheet = range.split("!")[0];
+          if (sheet === "users") {
+            return {
+              range,
+              values: [
+                ["id", "nama"],
+                ["u1", "Admin"],
+              ],
+            };
+          }
+          return { range, values: [] };
+        });
+      },
+      async batchUpdate() {},
+      async append() {},
+    };
+    const buf = await buildBackupWorkbook(fake, "spread-1");
+    expect(ranges).toHaveLength(12); // SATU batchGet 12 ranges
+    const wb = new ExcelJS.Workbook();
+    await wb.xlsx.load(buf);
+    expect(wb.worksheets.map((w) => w.name)).toContain("absensi");
+    expect(wb.worksheets).toHaveLength(12);
+    const users = wb.getWorksheet("users")!;
+    expect(users.rowCount).toBe(2);
+    const absensi = wb.getWorksheet("absensi")!;
+    expect(String(absensi.getRow(1).getCell(1).value)).toBe("id"); // header skema
   });
 });

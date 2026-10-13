@@ -24,9 +24,13 @@ export default async function GuardedLayout({
   if (session.user.slug !== slug) redirect(`/s/${session.user.slug}`);
 
   let schoolName = slug;
+  let koneksiTerputus = false;
   try {
     const school = await getServerRegistry().findBySlug(slug);
-    if (school) schoolName = school.nama_sekolah;
+    if (school) {
+      schoolName = school.nama_sekolah;
+      koneksiTerputus = school.status === "perlu_hubungkan_ulang";
+    }
   } catch {
     // Nama tampilan saja; proteksi tidak bergantung pada fetch ini.
   }
@@ -35,6 +39,8 @@ export default async function GuardedLayout({
     <AppShell
       slug={slug}
       schoolName={schoolName}
+      koneksiTerputus={koneksiTerputus}
+      isAdmin={session.user.role === "admin"}
       user={{
         name: session.user.name,
         username: session.user.username,

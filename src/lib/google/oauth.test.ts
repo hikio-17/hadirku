@@ -8,6 +8,7 @@ import {
   getOAuthRedirectUri,
   isInvalidGrantError,
   refreshAccessToken,
+  revokeGoogleToken,
 } from "./oauth";
 
 afterEach(() => {
@@ -135,5 +136,37 @@ describe("isInvalidGrantError", () => {
     expect(isInvalidGrantError(new Error("invalid_grant"))).toBe(true);
     expect(isInvalidGrantError(new Error("lainnya"))).toBe(false);
     expect(isInvalidGrantError(null)).toBe(false);
+  });
+});
+
+describe("revokeGoogleToken", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("POST form-urlencoded ke endpoint revoke", async () => {
+    const fetchMock = vi.fn(async () => new Response("{}", { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    await revokeGoogleToken("rt-rahasia");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe("https://oauth2.googleapis.com/revoke");
+    expect(init.method).toBe("POST");
+    expect(String(init.body)).toContain("token=rt-rahasia");
+  });
+
+  it("gagal bila Google menolak / offline", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response("{}", { status: 400 }))
+    );
+    await expect(revokeGoogleToken("x")).rejects.toThrow(/cabut/);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        throw new Error("offline");
+      })
+    );
+    await expect(revokeGoogleToken("x")).rejects.toThrow(/menghubungi/);
   });
 });

@@ -29,6 +29,7 @@ export async function submitWizard(formData: FormData): Promise<never> {
     tahun_ajaran_nama: str(formData.get("tahun_ajaran_nama")),
     semester: str(formData.get("semester")),
     jam_pelajaran: str(formData.get("jam_pelajaran")),
+    persetujuan: formData.get("persetujuan") === "true",
   };
 
   try {

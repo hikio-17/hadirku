@@ -13,9 +13,9 @@ const ERRORS: Record<string, string> = {
 export default async function DaftarPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; putus?: string }>;
 }) {
-  const { error } = await searchParams;
+  const { error, putus } = await searchParams;
   const errorMsg = error ? (ERRORS[error] ?? ERRORS.gagal) : null;
 
   return (
@@ -29,6 +29,14 @@ export default async function DaftarPage({
         </p>
       </div>
 
+      {putus && (
+        <div
+          role="status"
+          className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800"
+        >
+          Koneksi diputus dan token dihapus. Spreadsheet di Drive Anda tidak ikut terhapus.
+        </div>
+      )}
       {errorMsg && (
         <div
           role="alert"
@@ -57,7 +65,15 @@ export default async function DaftarPage({
           Data siswa tersimpan di Google Drive milik sekolah Anda, bukan di server platform.
           Platform hanya menyimpan nama sekolah, email admin, ID spreadsheet, dan token akses
           terenkripsi. Akses dapat dicabut kapan saja lewat pengaturan akun Google Anda
-          (myaccount.google.com/permissions). Kebijakan privasi lengkap menyusul di Tahap 8.
+          (myaccount.google.com/permissions). Selengkapnya:{" "}
+          <Link href="/kebijakan-privasi" className="underline">
+            Kebijakan Privasi
+          </Link>{" "}
+          dan{" "}
+          <Link href="/syarat-ketentuan" className="underline">
+            Syarat Penggunaan
+          </Link>
+          .
         </p>
       </div>
     </main>

@@ -56,12 +56,16 @@ export function AppShell({
   user,
   nav,
   children,
+  koneksiTerputus,
+  isAdmin,
 }: {
   slug: string;
   schoolName: string;
   user: ShellUser;
   nav: NavItem[];
   children: React.ReactNode;
+  koneksiTerputus?: boolean;
+  isAdmin?: boolean;
 }) {
   const pathname = usePathname();
   const initials = user.name
@@ -127,7 +131,24 @@ export function AppShell({
           </form>
         </header>
 
-        <main className="mx-auto w-full max-w-3xl flex-1 px-5 pb-28 pt-6 md:pb-10">{children}</main>
+        <main className="mx-auto w-full max-w-3xl flex-1 px-5 pb-28 pt-6 md:pb-10">
+          {koneksiTerputus && (
+            <div
+              role="alert"
+              className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"
+            >
+              Koneksi Google terputus.{" "}
+              {isAdmin ? (
+                <Link href={`/s/${slug}/admin/koneksi`} className="font-medium underline">
+                  Hubungkan ulang di sini
+                </Link>
+              ) : (
+                "Hubungi admin sekolah untuk menghubungkan ulang."
+              )}
+            </div>
+          )}
+          {children}
+        </main>
 
         {/* Bottom-nav mobile */}
         <nav className="fixed inset-x-0 bottom-0 z-10 border-t border-zinc-200 bg-white px-2 pb-[env(safe-area-inset-bottom)] pt-2 md:hidden">

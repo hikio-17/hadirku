@@ -34,6 +34,15 @@ export default async function AdminHome({ params }: { params: Promise<{ slug: st
           <p className="text-sm font-semibold">Pengaturan sekolah</p>
           <p className="mt-0.5 text-xs text-zinc-500">Profil, kop laporan, ambang kehadiran.</p>
         </Link>
+        <Link
+          href={`/s/${slug}/admin/koneksi`}
+          className="rounded-xl border border-zinc-200 bg-white p-4 hover:border-zinc-950"
+        >
+          <p className="text-sm font-semibold">Koneksi & backup</p>
+          <p className="mt-0.5 text-xs text-zinc-500">
+            Status Google, unduh backup, putuskan koneksi.
+          </p>
+        </Link>
       </div>
       <div className="rounded-xl border border-zinc-200 bg-white p-5">
         <p className="text-sm font-semibold">Berikutnya di Hadirku</p>

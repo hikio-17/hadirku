@@ -23,6 +23,10 @@ export const wizardSchema = z.object({
   tahun_ajaran_nama: z.string().trim().min(1, "Nama tahun ajaran wajib diisi.").max(32),
   semester: z.enum(["Ganjil", "Genap"]),
   jam_pelajaran: z.string().trim().min(1, "Jam pelajaran wajib diisi.").max(120),
+  /** Persetujuan eksplisit: sekolah bertindak sebagai pengendali data (UU PDP, data anak). */
+  persetujuan: z.literal(true, {
+    message: "Centang persetujuan pengendali data untuk melanjutkan.",
+  }),
 });
 
 export type WizardInput = z.infer<typeof wizardSchema>;

@@ -65,6 +65,7 @@ const INPUT = {
   tahun_ajaran_nama: "2026/2027",
   semester: "Ganjil",
   jam_pelajaran: "Senin-Jumat 07:00-12:00",
+  persetujuan: true,
 } as const;
 
 const SESSION: SetupSession = {
@@ -152,6 +153,13 @@ describe("completeSetup", () => {
     });
     await expect(completeSetup({ ...INPUT }, SESSION, deps)).rejects.toThrow(/sudah dipakai/);
     expect(google.provision).not.toHaveBeenCalled();
+  });
+
+  it("tanpa persetujuan pengendali data ditolak", async () => {
+    const { deps } = await makeDeps();
+    const { persetujuan: _buang, ...tanpaSetuju } = { ...INPUT };
+    void _buang;
+    await expect(completeSetup(tanpaSetuju, SESSION, deps)).rejects.toThrow(/pengendali data/);
   });
 
   it("input tidak valid ditolak Zod (password pendek)", async () => {

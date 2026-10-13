@@ -5,9 +5,9 @@ Data tiap sekolah tersimpan di Google Spreadsheet milik sekolah itu sendiri;
 platform hanya menyimpan registry (nama sekolah, email admin, ID sheet, token
 terenkripsi). Bahasa antarmuka: Bahasa Indonesia. Mobile-first.
 
-> Status: **Tahap 7** — modul Siswa (beranda %, kalender, riwayat per
-> mapel, izin/sakit + bukti Drive). Privasi, backup, putus koneksi, mode
-> self-host menyusul di Tahap 8–9.
+> Status: **Tahap 8** — privasi & syarat, backup Excel, status + putus
+> koneksi Google, header keamanan. Mode self-host + Postgres menyusul
+> Tahap 9.
 
 ## Tech stack
 
@@ -110,6 +110,19 @@ mustChange }` — tanpa `password_hash`. Google OAuth tidak lewat Auth.js
   batalkan selagi menunggu. Anti duplikat pending per tanggal.
 - Riwayat `/siswa/riwayat`: tabel per mapel + 20 catatan terakhir.
 - Persetujuan tetap oleh wali kelas di dashboard guru (Tahap 5).
+
+## Privasi, backup & koneksi (Tahap 8)
+
+- `/kebijakan-privasi` + `/syarat-ketentuan` (Bahasa Indonesia): data di
+  Drive sekolah, registry minimal, cara mencabut akses. Wizard meminta
+  persetujuan eksplisit pengendali data (UU PDP, data anak).
+- `/s/[slug]/admin/koneksi`: status koneksi + hubungkan ulang (spreadsheet
+  sama), backup Excel 12 tab (`/api/admin/backup`, 1 batchGet), putuskan
+  koneksi (revoke ke Google best-effort + hapus token + keluar).
+- Banner amber global saat status `perlu_hubungkan_ulang` (admin dapat
+  tautan hubung ulang).
+- Header keamanan: CSP (ketat di produksi, longgar untuk HMR di dev),
+  HSTS, X-Frame-Options DENY, nosniff. Tanpa analitik pihak ketiga.
 
 ## Rotasi kunci enkripsi
 

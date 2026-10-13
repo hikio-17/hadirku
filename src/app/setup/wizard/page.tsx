@@ -151,6 +151,24 @@ export default async function WizardPage({
           </div>
         </div>
 
+        <div className="rounded-lg bg-zinc-100 px-4 py-3">
+          <label className="flex items-start gap-2 text-xs leading-5 text-zinc-700">
+            <input type="checkbox" name="persetujuan" value="true" required className="mt-1" />
+            <span>
+              Sekolah kami bertindak sebagai <strong>pengendali data</strong> atas data siswa dan
+              guru sesuai UU PDP, dan telah memiliki dasar yang sah untuk data anak. Baca{" "}
+              <a href="/kebijakan-privasi" className="underline">
+                Kebijakan Privasi
+              </a>{" "}
+              dan{" "}
+              <a href="/syarat-ketentuan" className="underline">
+                Syarat Penggunaan
+              </a>
+              .
+            </span>
+          </label>
+        </div>
+
         <button
           type="submit"
           className="flex h-12 w-full items-center justify-center rounded-full bg-zinc-950 px-5 text-base font-medium text-white transition-colors hover:bg-zinc-800"

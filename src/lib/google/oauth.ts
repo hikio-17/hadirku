@@ -160,3 +160,23 @@ export async function refreshAccessToken(
     throw err;
   }
 }
+
+/**
+ * Cabut token ke Google (dipakai sebelum menghapus dari registry).
+ * Token tidak pernah di-log; body form-urlencoded sesuai RFC 7009.
+ */
+export async function revokeGoogleToken(token: string): Promise<void> {
+  let res: Response;
+  try {
+    res = await fetch("https://oauth2.googleapis.com/revoke", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({ token }).toString(),
+    });
+  } catch {
+    throw new Error("Gagal menghubungi Google. Periksa koneksi lalu coba lagi.");
+  }
+  if (!res.ok) {
+    throw new Error("Google menolak pencabutan token. Coba lagi.");
+  }
+}
