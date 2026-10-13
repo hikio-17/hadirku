@@ -138,6 +138,11 @@ export class RegistryRepo {
     await this.table.update(schoolId, { terakhir_aktif: new Date().toISOString() });
   }
 
+  /** Alihkan adapter storage sekolah (dipakai setelah migrasi terverifikasi). */
+  async setStorageAdapter(schoolId: string, adapter: "sheets" | "postgres"): Promise<void> {
+    await this.table.update(schoolId, { storage_adapter: adapter });
+  }
+
   /** Key cache registry untuk satu sekolah (prefix school_id). */
   static cacheKeyFor(schoolId: string): string {
     return tenantKey(schoolId, "registry");

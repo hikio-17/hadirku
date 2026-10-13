@@ -1,14 +1,9 @@
-import { randomBytes } from "node:crypto";
 import { describe, expect, it } from "vitest";
 
 import { NeedsReconnectError } from "@/lib/google/oauth";
-import { RegistryRepo, SCHOOL_COLUMNS } from "@/lib/registry/RegistryRepo";
 import type { CellValue, SheetsValuesClient } from "@/lib/storage/sheets/SheetsTable";
 import { USERS_COLUMNS } from "@/lib/storage/sheets/columns";
 import { changePassword, resetPasswordByAdmin, verifyCredentials, type VerifyDeps } from "./auth";
-
-const KEY = randomBytes(32).toString("base64");
-void KEY;
 
 function makeTabularFake(header: string[], seed: string[][] = []) {
   const data: string[][] = [...seed];
@@ -50,31 +45,33 @@ async function makeDeps(opts?: {
   users?: Record<string, string>[];
   schoolStatus?: "aktif" | "nonaktif";
   brokenConnection?: boolean;
-}): Promise<{ deps: VerifyDeps; registry: RegistryRepo }> {
-  const regFake = makeTabularFake([...SCHOOL_COLUMNS]);
-  const registry = new RegistryRepo(regFake.client, "registry-1");
-  const school = await registry.registerSchool({
+}): Promise<{ deps: VerifyDeps }> {
+  const usersFake = makeTabularFake(
+    [...USERS_COLUMNS],
+    (opts?.users ?? [userRow()]).map((u) => [...USERS_COLUMNS].map((c) => u[c] ?? ""))
+  );
+  const school = {
+    school_id: "sch-1",
     slug: "smpn-1",
     nama_sekolah: "SMPN 1",
     owner_email: "a@sekolah.id",
     sheet_id: "spread-1",
     refresh_token_enc: "enc",
-  });
-  if (opts?.schoolStatus === "nonaktif") await registry.setStatus(school.school_id, "nonaktif");
-
-  const usersFake = makeTabularFake(
-    [...USERS_COLUMNS],
-    (opts?.users ?? [userRow()]).map((u) => [...USERS_COLUMNS].map((c) => u[c] ?? ""))
-  );
+    status: opts?.schoolStatus ?? "aktif",
+    storage_adapter: "sheets",
+    dibuat_pada: "",
+    terakhir_aktif: "",
+  } as const;
   const deps: VerifyDeps = {
-    registry,
+    loadSchool: async (slug: string) =>
+      slug.trim().toLowerCase() === "smpn-1" ? { ...school } : null,
     sheetsForSchool: async () => {
       if (opts?.brokenConnection) throw new NeedsReconnectError();
       return usersFake.client;
     },
     compare,
   };
-  return { deps, registry };
+  return { deps };
 }
 
 describe("verifyCredentials", () => {

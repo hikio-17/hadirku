@@ -10,6 +10,7 @@ import {
 } from "@/lib/google/sheets-adapter";
 import { getCache, getLocker, tenantKey, type Cache, type Locker } from "@/lib/redis";
 import { RegistryRepo } from "@/lib/registry/RegistryRepo";
+import { getSelfHostContext, isSelfHostMode } from "@/lib/selfhost";
 import { assertStorageSupported } from "@/lib/storage";
 import type { SheetsValuesClient } from "@/lib/storage/sheets/SheetsTable";
 import type { SchoolRow } from "@/lib/storage/types";
@@ -73,6 +74,10 @@ export function defaultTenantDeps(): TenantDeps {
  * - invalid_grant → status perlu_hubungkan_ulang + NeedsReconnectError.
  */
 export async function getTenantContext(slug: string, deps?: TenantDeps): Promise<TenantClient> {
+  // Self-host: tanpa registry/OAuth, langsung konteks statis via Service Account.
+  if (isSelfHostMode()) {
+    return getSelfHostContext(slug);
+  }
   const d = deps ?? defaultTenantDeps();
   const cache = d.cache ?? getCache();
   const locker = d.locker ?? getLocker();

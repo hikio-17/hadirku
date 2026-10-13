@@ -10,7 +10,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "format": "prettier --write .",
-    "keys:rotate": "tsx --conditions=react-server scripts/rotate-token-key.ts"
+    "keys:rotate": "tsx --conditions=react-server scripts/rotate-token-key.ts",
+    "migrate:sheets-pg": "tsx --conditions=react-server scripts/migrate-sheets-to-postgres.ts",
+    "seed:selfhost": "tsx --conditions=react-server scripts/seed-selfhost.ts"
   },
   "dependencies": {
     "@upstash/ratelimit": "^2.2.0",
@@ -26,6 +28,7 @@
     "nanoid": "^6.0.2",
     "next": "15.5.9",
     "next-auth": "5.0.0-beta.32",
+    "pg": "^8.23.1",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "recharts": "^3.10.1",
@@ -38,6 +41,7 @@
     "@tailwindcss/turbopack": "^4",
     "@types/bcryptjs": "^3.0.0",
     "@types/node": "^22.20.5",
+    "@types/pg": "^8.23.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",

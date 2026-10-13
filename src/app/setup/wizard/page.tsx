@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 
 import { getSetupSession, SETUP_COOKIE } from "@/lib/setup-session";
 import { submitWizard } from "./actions";
+import { isSelfHostMode } from "@/lib/selfhost";
 
 function Field({
   label,
@@ -32,6 +33,7 @@ export default async function WizardPage({
 }) {
   const setupId = (await cookies()).get(SETUP_COOKIE)?.value;
   if (!setupId) redirect("/daftar?error=sesi");
+  if (isSelfHostMode()) redirect("/daftar");
   const session = await getSetupSession(setupId);
   if (!session) redirect("/daftar?error=sesi");
   const { error } = await searchParams;

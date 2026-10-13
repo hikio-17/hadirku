@@ -22,6 +22,8 @@ function cookieOpts(maxAge: number) {
  * Refresh token tidak pernah dikirim ke client.
  */
 export async function GET(req: NextRequest): Promise<NextResponse> {
+  const { isSelfHostMode } = await import("@/lib/selfhost");
+  if (isSelfHostMode()) return NextResponse.redirect("/daftar");
   const params = req.nextUrl.searchParams;
   if (params.get("error")) return NextResponse.redirect("/daftar?error=ditolak");
 

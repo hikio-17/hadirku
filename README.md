@@ -5,170 +5,143 @@ Data tiap sekolah tersimpan di Google Spreadsheet milik sekolah itu sendiri;
 platform hanya menyimpan registry (nama sekolah, email admin, ID sheet, token
 terenkripsi). Bahasa antarmuka: Bahasa Indonesia. Mobile-first.
 
-> Status: **Tahap 8** — privasi & syarat, backup Excel, status + putus
-> koneksi Google, header keamanan. Mode self-host + Postgres menyusul
-> Tahap 9.
+> Status: **selesai Tahap 1–9** — fondasi, registrasi satu-klik, auth+RBAC,
+> modul Admin, modul Guru, export Excel/PDF, modul Siswa, privasi+backup,
+> self-host + Postgres.
+
+## Fitur per peran
+
+- **Guru**: dashboard (statistik, jadwal + Mulai Absen, tren 7 hari, kehadiran
+  rendah, izin menunggu), input absensi 1-ketuk + draft offline, rekap &
+  riwayat + ubah + log, export Excel/PDF berkop, setujui/tolak izin (wali).
+- **Siswa**: beranda %, kalender bulanan, riwayat per mapel, form izin/sakit
+  - bukti Drive, batalkan selagi menunggu.
+- **Admin sekolah**: CRUD akun/guru/siswa/kelas/mapel/tahun ajaran/penugasan/
+  jadwal/pengaturan, impor Excel + template, reset password, backup Excel,
+  status + hubung-ulang + putus koneksi Google.
 
 ## Tech stack
 
-Next.js 15 (App Router) + TypeScript strict, Tailwind CSS + shadcn/ui,
-Auth.js v5, googleapis (Sheets v4 + Drive v3), Upstash Redis, Zod, Vitest.
-Lihat `package.json` untuk daftar lengkap per tahap.
+Next.js 15 (App Router) + TypeScript strict · Tailwind + shadcn pola +
+lucide-react · Auth.js v5 (Credentials+JWT) · googleapis (Sheets v4, Drive v3)
+· Upstash Redis (cache, lock, rate limit) · Zod · exceljs · jspdf · bcryptjs ·
+nanoid · Vitest · MIT.
 
 ## Mulai cepat
 
 ```bash
-# Node 22 + pnpm
-nvm use # atau sesuaikan versi Node ke 22.x
+nvm use            # Node 22 (lihat .nvmrc)
 corepack enable
 pnpm install
+cp .env.example .env.local   # isi variabel di bawah
 
-cp .env.example .env.local
-# isi variabel di .env.local (lihat komentar di .env.example)
-
-pnpm dev     # development
-pnpm test    # unit test (Vitest)
-pnpm lint    # ESLint
-pnpm build   # production build
+pnpm dev           # http://localhost:3000
+pnpm test          # unit test
+pnpm lint          # eslint
+pnpm build         # production build
 ```
 
-Tanpa kredensial Google/Upstash, aplikasi tetap bisa di-test: Redis memakai
-fallback memory lokal dan client Google di-mock di unit test.
+Tanpa kredensial Google/Upstash, test tetap hijau (mock + fallback memory).
 
-## Registrasi sekolah (Tahap 2)
+## Environment
 
-1. Operator buka `/daftar` → "Daftar dengan Google" (scope: `openid email
-profile` + `drive.file` saja, `access_type=offline`, `prompt=consent`).
-2. Callback tukar code → refresh token (terenkripsi AES-256-GCM) → sesi setup
-   30 menit (cookie hanya berisi ID acak).
-3. Wizard `/setup/wizard`: nama + slug sekolah, tahun ajaran, jam pelajaran,
-   dan akun admin pertama → aplikasi membuat spreadsheet di Drive operator
-   (12 tab + header), seed data awal, dan mencatat di registry.
-4. Selesai → alamat login `/s/[slug]/login` untuk dibagikan ke guru.
-5. Koneksi terputus (`invalid_grant`) → status `perlu_hubungkan_ulang`;
-   hubungkan ulang via `/api/auth/google/reconnect?slug=...` memakai
-   spreadsheet yang sama.
+| Variabel                                              | Wajib       | Keterangan                           |
+| ----------------------------------------------------- | ----------- | ------------------------------------ |
+| `AUTH_SECRET`                                         | prod        | `npx auth secret`                    |
+| `NEXT_PUBLIC_APP_URL`                                 | ya          | Tanpa trailing slash                 |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`           | multitenant | OAuth pendaftaran                    |
+| `GOOGLE_SERVICE_ACCOUNT_EMAIL` / `GOOGLE_PRIVATE_KEY` | ya          | Akses registry (+ self-host)         |
+| `REGISTRY_SHEET_ID`                                   | multitenant | Spreadsheet registry, share ke SA    |
+| `TOKEN_ENCRYPTION_KEY`                                | multitenant | `openssl rand -base64 32`            |
+| `UPSTASH_REDIS_REST_URL` / `_TOKEN`                   | prod        | Kosong = memory lokal (dev)          |
+| `DEPLOY_MODE`                                         | —           | `multitenant` (default) / `selfhost` |
+| `SELFHOST_SPREADSHEET_ID` / `_SLUG` / `_SCHOOL_NAME`  | selfhost    | Lihat bawah                          |
+| `DATABASE_URL`                                        | migrasi     | Postgres tujuan migrasi              |
 
-Semua baca data sekolah wajib lewat `getTenantContext(slug)` di
-`src/lib/google/tenant-client.ts` (cache token = expires_in − 5 mnt,
-lock Redis saat refresh).
+Registry: satu spreadsheet dengan tab `schools` (`school_id, slug,
+nama_sekolah, owner_email, sheet_id, refresh_token_enc, status,
+storage_adapter, dibuat_pada, terakhir_aktif`), di-share hanya ke email SA.
 
-## Login & akses (Tahap 3)
+## Alur pendaftaran sekolah (multitenant)
 
-- Login di `/s/[slug]/login` (username unik per sekolah, password bcrypt).
-  Rate limit per slug+username+IP dicek sebelum verifikasi.
-- Sesi JWT Auth.js v5 (12 jam): `{ id, username, role, schoolId, slug,
-mustChange }` — tanpa `password_hash`. Google OAuth tidak lewat Auth.js
-  (butuh refresh token persisten + scope drive.file, lihat Tahap 2).
-- `middleware.ts` (Edge, via `next-auth/jwt`) + layout `(terlindungi)`
-  (Node) menegakkan: wajib login, slug URL == slug sesi (anti lintas
-  sekolah), role per segmen (`admin|guru|siswa`), dan wajib ganti password.
-- Ganti password: `/s/[slug]/ganti-password` (wajib saat login pertama /
-  setelah reset admin), dilanjutkan login ulang agar klaim sesi segar.
-- Reset password oleh admin: `resetPasswordByAdmin()` di
-  `src/lib/services/auth.ts` (UI admin menyusul Tahap 4).
+`/daftar` → Daftar dengan Google (scope `drive.file` saja) → wizard
+(nama, slug, tahun ajaran, admin pertama + persetujuan pengendali data) →
+spreadsheet dibuat di Drive operator → URL login `/s/[slug]/login`.
 
-## Modul admin (Tahap 4)
+## Deploy ke Vercel (gratis)
 
-- `/s/[slug]/admin/data`: akun pengguna (buat, ubah, aktif/nonaktif, reset
-  password), profil guru & siswa (terhubung akun login), kelas, mapel,
-  tahun ajaran (satu aktif), penugasan guru×kelas×mapel, jadwal, pengaturan.
-- Username unik per sekolah; NIP/NIS unik bila diisi. Hapus diblok bila
-  masih dirujuk (kelas→siswa/penugasan, guru→penugasan, dst); akun hanya
-  dinonaktifkan (tak bisa menonaktifkan diri sendiri).
-- Impor Excel: unduh template (`/api/admin/template/guru|siswa`) → unggah
-  (maks 5 MB) → pratinjau + error per nomor baris → konfirmasi (1 append
-  akun + 1 append profil). Batch sementara 10 menit, sekali pakai.
+1. Push repo ke GitHub, import di Vercel (preset Next.js).
+2. Set **Node.js 22.x** (Settings → General → Node Version).
+3. Isi Environment Variables sesuai tabel (Production + Preview).
+   `GOOGLE_PRIVATE_KEY`: tempel isi penuh termasuk `-----BEGIN...`
+   (Vercel menangani newline `\n` otomatis; kode juga menormalisasi).
+4. Deploy. Buka `/daftar` untuk sekolah pertama.
+5. (Opsional) Upstash Redis gratis via Vercel Marketplace → tempel URL+token.
+   Tanpa ini, cache memakai memory (tidak disarankan multi-instance).
 
-## Modul guru (Tahap 5)
+## Jalur self-host (satu sekolah)
 
-- Dashboard `/s/[slug]/guru`: statistik hari ini, jadwal + tombol Mulai
-  Absen, filter kelas/mapel, tren 7 hari (grafik), kehadiran rendah
-  (< ambang pengaturan), izin menunggu + setujui/tolak (khusus wali).
-- Input `/s/[slug]/guru/absensi`: ketuk H/I/S/A, semua-hadir, catatan,
-  cari, progres; draft localStorage + kirim ulang; simpan hemat
-  (1 batchUpdate + append seperlunya).
-- Rekap `/s/[slug]/guru/rekap`: filter periode/kelas/mapel/status, tabel
-  per siswa + %, riwayat 20/halaman, ubah + `log_perubahan`.
-- Semua tulis diverifikasi milik penugasan guru (anti lintas kelas).
-
-## Export laporan (Tahap 6)
-
-- `/s/[slug]/guru/laporan`: filter periode/kelas/mapel → pratinjau kop +
-  tabel (persis isi file) → Unduh Excel / PDF (`/api/laporan/rekap`).
-- Kop dari tab pengaturan (nama + alamat). Excel: judul, header, border,
-  footer pencetak. PDF A4: tabel + nomor halaman + pencetak.
-- Khusus guru di Tahap 6 (data milik penugasannya); ekspor admin
-  menyusul Tahap 8 dengan generator yang sama.
-
-## Modul siswa (Tahap 7)
-
-- Beranda `/s/[slug]/siswa`: persentase keseluruhan, hitung H/I/S/A,
-  kalender bulanan (status terberat per tanggal), per mapel, ajukan izin.
-- Izin/sakit `/siswa/izin`: form (tanggal, jenis, alasan min 10) + bukti
-  opsional (jpg/png/pdf ≤2 MB) ke folder Drive sekolah, riwayat status +
-  batalkan selagi menunggu. Anti duplikat pending per tanggal.
-- Riwayat `/siswa/riwayat`: tabel per mapel + 20 catatan terakhir.
-- Persetujuan tetap oleh wali kelas di dashboard guru (Tahap 5).
-
-## Privasi, backup & koneksi (Tahap 8)
-
-- `/kebijakan-privasi` + `/syarat-ketentuan` (Bahasa Indonesia): data di
-  Drive sekolah, registry minimal, cara mencabut akses. Wizard meminta
-  persetujuan eksplisit pengendali data (UU PDP, data anak).
-- `/s/[slug]/admin/koneksi`: status koneksi + hubungkan ulang (spreadsheet
-  sama), backup Excel 12 tab (`/api/admin/backup`, 1 batchGet), putuskan
-  koneksi (revoke ke Google best-effort + hapus token + keluar).
-- Banner amber global saat status `perlu_hubungkan_ulang` (admin dapat
-  tautan hubung ulang).
-- Header keamanan: CSP (ketat di produksi, longgar untuk HMR di dev),
-  HSTS, X-Frame-Options DENY, nosniff. Tanpa analitik pihak ketiga.
-
-## Rotasi kunci enkripsi
-
-```bash
-export OLD_TOKEN_ENCRYPTION_KEY="<kunci lama>"
-export TOKEN_ENCRYPTION_KEY="<kunci baru>"  # openssl rand -base64 32
-export GOOGLE_SERVICE_ACCOUNT_EMAIL="..."
-export GOOGLE_PRIVATE_KEY="..."
-export REGISTRY_SHEET_ID="..."
-pnpm keys:rotate
-```
+1. Di Google Cloud Console: buat project → aktifkan **Sheets API + Drive API**
+   → buat **Service Account** → buat key JSON → catat email + private key.
+2. Siapkan spreadsheet:
+   ```bash
+   export GOOGLE_SERVICE_ACCOUNT_EMAIL="sa@...iam.gserviceaccount.com"
+   export GOOGLE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----..."
+   pnpm seed:selfhost --title="Hadirku - SDN 1"
+   # catat ID yang dicetak; buat akun admin pertama manual:
+   # tab users ← id bebas, nama, username, password_hash (bcrypt), role=admin,
+   # aktif=TRUE, wajib_ganti_password=TRUE, dibuat_pada=now
+   ```
+   Hash bcrypt bisa dibuat dengan `node -e "console.log(require('bcryptjs').hashSync('rahasia123', 12))"`.
+   Alternatif: bagikan spreadsheet kosong ke email SA (Editor), lalu buat
+   header manual sesuai `src/lib/storage/sheets/columns.ts`.
+3. Env: `DEPLOY_MODE=selfhost`, `SELFHOST_SPREADSHEET_ID`, opsional
+   `SELFHOST_SLUG` (default `sekolah`), `SELFHOST_SCHOOL_NAME`, `AUTH_SECRET`.
+4. Jalankan (`pnpm dev` / `pnpm build && pnpm start` / Docker sendiri) dan
+   buka `/s/[slug]/login`. Rute `/daftar` dan OAuth Google nonaktif otomatis.
 
 ## Struktur folder
 
 ```
 src/
-  app/                  # routes (marketing, auth, s/[slug], api)
-  components/           # komponen UI (shadcn/ui)
+  app/                  # (marketing) landing-teks, (auth) daftar, s/[slug], api
+  components/           # app-shell, admin/ui
   lib/
-    crypto/token.ts     # AES-256-GCM untuk refresh token + redact log
-    redis.ts            # cache, lock (SET NX EX), fallback memory
-    ratelimit.ts        # rate limit login (Upstash, fallback memory)
-    registry/           # RegistryRepo (tab `schools` via Service Account)
-    google/             # oauth, tenant-client, provision (Tahap 2)
-    storage/
-      types.ts          # interface Repository<T> + tipe baris (storage-agnostic)
-      sheets/           # SheetsTable<T> + repository per entitas
-      postgres/         # stub migrasi Supabase (Tahap 9)
-      index.ts          # factory adapter per sekolah
-    services/           # logika bisnis (Tahap 5+)
-    validations/        # skema Zod
-    export/             # generator xlsx & pdf (Tahap 6)
-  types/                # tipe bersama
+    crypto/token.ts     # AES-256-GCM + redact
+    redis.ts            # cache, lock NX EX, fallback memory
+    ratelimit.ts        # login 10/10 mnt (+memory)
+    registry/           # RegistryRepo + rotasi kunci
+    google/             # oauth, tenant-client, provision, sheets-adapter
+    storage/            # Repository<T>, sheets/, postgres/
+    services/           # master, pengguna, akademik, guru, siswa, setup, impor, auth
+    validations/        # zod per modul
+    export/             # kop, rekap xlsx/pdf, backup
+    selfhost.ts admin-guard.ts nav.ts route-guard.ts security-headers.ts
+  types/  scripts/  docs/  .env.example
 ```
 
-Aturan keras: UI tidak boleh memanggil Google API langsung. Alurnya
-Server Action/Route Handler → service → repository → adapter.
+Aturan keras: UI → Server Action/Route Handler → service → repository →
+adapter. Semua baca data sekolah lewat `getTenantContext()`.
 
-## Environment
-
-Lihat `.env.example`. Kunci enkripsi dibuat dengan:
+## Skrip operasional
 
 ```bash
-openssl rand -base64 32
+pnpm keys:rotate        # rotasi TOKEN_ENCRYPTION_KEY (butuh OLD_TOKEN_ENCRYPTION_KEY)
+pnpm migrate:sheets-pg --slug=smpn-1 [--schema=school_smpn1] [--set-adapter]
+pnpm seed:selfhost --title="..."   # siapkan spreadsheet self-host
 ```
+
+Migrasi Postgres: buat database → terapkan `docs/postgres-schema.sql` per
+sekolah (satu schema per sekolah) → jalankan migrasi → verifikasi jumlah
+baris → `--set-adapter` bila runtime Postgres sudah siap (lihat catatan di
+`docs/postgres-schema.sql`).
+
+## Keamanan & privasi
+
+Header CSP/HSTS/DENY, bcrypt cost 12, rate limit login, JWT 12 jam tanpa
+hash, token tak pernah ke client/log, lock refresh, banner hubung-ulang.
+Detail: `/kebijakan-privasi`, `/syarat-ketentuan`.
 
 ## Lisensi
 
-MIT — lihat `LICENSE`.
+MIT — lihat `LICENSE`. Kontribusi: baca `CONTRIBUTING.md`.

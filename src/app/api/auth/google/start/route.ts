@@ -15,6 +15,8 @@ function cookieOpts(maxAge: number) {
 
 /** Mulai pendaftaran: set state CSRF lalu arahkan ke persetujuan Google. */
 export async function GET(): Promise<Response> {
+  const { isSelfHostMode } = await import("@/lib/selfhost");
+  if (isSelfHostMode()) return new Response("Tidak tersedia di mode mandiri.", { status: 404 });
   const state = randomBytes(32).toString("hex");
   let url: string;
   try {

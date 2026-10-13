@@ -12,6 +12,8 @@ import { getServerRegistry } from "@/lib/google/tenant-client";
  * TODO(Tahap 3): batasi hanya untuk admin sekolah yang sedang login.
  */
 export async function GET(req: NextRequest): Promise<Response> {
+  const { isSelfHostMode } = await import("@/lib/selfhost");
+  if (isSelfHostMode()) return new Response("Tidak tersedia di mode mandiri.", { status: 404 });
   const slug = (req.nextUrl.searchParams.get("slug") ?? "").trim().toLowerCase();
   if (!slug) return new Response("Parameter slug wajib diisi.", { status: 400 });
 

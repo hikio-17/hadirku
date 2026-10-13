@@ -5,12 +5,12 @@ import { z } from "zod";
 
 import { getServerRegistry } from "@/lib/google/tenant-client";
 import { getTenantContext } from "@/lib/google/tenant-client";
+import { isSelfHostMode, selfHostSchoolRow } from "@/lib/selfhost";
 import { assertStorageSupported } from "@/lib/storage";
 import { SheetsTable, booleanCodec } from "@/lib/storage/sheets/SheetsTable";
 import type { SheetsValuesClient } from "@/lib/storage/sheets/SheetsTable";
 import { USERS_COLUMNS } from "@/lib/storage/sheets/columns";
 import type { SchoolRow, UserRow } from "@/lib/storage/types";
-import type { RegistryRepo } from "@/lib/registry/RegistryRepo";
 import type { Role } from "@/types";
 
 /** Kredensial login: username unik PER SEKOLAH (bukan global). */
@@ -34,7 +34,8 @@ export interface SafeUser {
 }
 
 export interface VerifyDeps {
-  registry: RegistryRepo;
+  /** Muat baris sekolah (registry multitenant ATAU statis self-host). */
+  loadSchool: (slug: string) => Promise<SchoolRow | null>;
   sheetsForSchool: (school: SchoolRow) => Promise<SheetsValuesClient> | SheetsValuesClient;
   compare: (password: string, hash: string) => Promise<boolean>;
 }
@@ -56,7 +57,7 @@ export async function verifyCredentials(raw: unknown, deps: VerifyDeps): Promise
   if (!parsed.success) return null;
   const { slug, username, password } = parsed.data;
 
-  const school = await deps.registry.findBySlug(slug);
+  const school = await deps.loadSchool(slug);
   if (!school || school.status !== "aktif") return null;
   try {
     assertStorageSupported(school.storage_adapter);
@@ -94,12 +95,19 @@ export async function verifyCredentials(raw: unknown, deps: VerifyDeps): Promise
   };
 }
 
-/** Wiring produksi: registry SA + tenant context (sheets terautentikasi sekolah). */
+/** Wiring produksi: registry SA (multitenant) atau statis (self-host) + tenant context. */
 export async function verifyCredentialsProduction(raw: unknown): Promise<SafeUser | null> {
   const parsed = loginSchema.safeParse(raw);
   if (!parsed.success) return null;
+  const loadSchool = async (slug: string): Promise<SchoolRow | null> => {
+    if (isSelfHostMode()) {
+      const s = selfHostSchoolRow();
+      return s.slug === slug.trim().toLowerCase() ? s : null;
+    }
+    return getServerRegistry().findBySlug(slug);
+  };
   return verifyCredentials(parsed.data, {
-    registry: getServerRegistry(),
+    loadSchool,
     sheetsForSchool: async (school) => (await getTenantContext(school.slug)).sheets,
     compare: (pw, hash) => bcrypt.compare(pw, hash),
   });

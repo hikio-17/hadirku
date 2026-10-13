@@ -58,5 +58,8 @@ async function main(): Promise<void> {
 }
 
 if (process.argv[1]?.endsWith("rotate-token-key.ts")) {
-  await main();
+  main().catch((err) => {
+    console.error(err instanceof Error ? err.message : err);
+    process.exit(1);
+  });
 }

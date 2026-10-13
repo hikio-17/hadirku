@@ -17,6 +17,12 @@ const envSchema = z.object({
   UPSTASH_REDIS_REST_URL: z.string().url().optional(),
   UPSTASH_REDIS_REST_TOKEN: z.string().optional(),
   DEPLOY_MODE: z.enum(["multitenant", "selfhost"]).default("multitenant"),
+  // Self-host: satu sekolah, Service Account, tanpa OAuth/registry.
+  SELFHOST_SPREADSHEET_ID: z.string().optional(),
+  SELFHOST_SLUG: z.string().default("sekolah"),
+  SELFHOST_SCHOOL_NAME: z.string().optional(),
+  // Postgres: hanya untuk migrasi/manual (lihat docs/postgres-schema.sql).
+  DATABASE_URL: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;
