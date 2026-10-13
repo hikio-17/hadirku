@@ -11,6 +11,11 @@ import { RegistryRepo } from "@/lib/registry/RegistryRepo";
 import type { SetupSession } from "@/lib/setup-session";
 import { SheetsTable, booleanCodec, generateId } from "@/lib/storage/sheets/SheetsTable";
 import type { SheetsValuesClient } from "@/lib/storage/sheets/SheetsTable";
+import {
+  PENGATURAN_COLUMNS,
+  TAHUN_AJARAN_COLUMNS,
+  USERS_COLUMNS,
+} from "@/lib/storage/sheets/columns";
 import type { PengaturanRow, TahunAjaranRow, UserRow } from "@/lib/storage/types";
 import { wizardSchema, type WizardInput } from "@/lib/validations/setup";
 
@@ -85,7 +90,7 @@ export async function completeSetup(
   const tahunAjaranId = generateId();
 
   const tahunAjaran = new SheetsTable<TahunAjaranRow>(sheets, spreadsheetId, "tahun_ajaran", {
-    columns: ["id", "nama", "semester", "aktif"],
+    columns: [...TAHUN_AJARAN_COLUMNS],
     codecs: { aktif: booleanCodec },
   });
   await tahunAjaran.insertMany([
@@ -93,7 +98,7 @@ export async function completeSetup(
   ]);
 
   const pengaturan = new SheetsTable<PengaturanRow>(sheets, spreadsheetId, "pengaturan", {
-    columns: ["kunci", "nilai"],
+    columns: [...PENGATURAN_COLUMNS],
     idColumn: "kunci",
   });
   await pengaturan.insertMany([
@@ -104,16 +109,7 @@ export async function completeSetup(
   ]);
 
   const users = new SheetsTable<UserRow>(sheets, spreadsheetId, "users", {
-    columns: [
-      "id",
-      "nama",
-      "username",
-      "password_hash",
-      "role",
-      "aktif",
-      "wajib_ganti_password",
-      "dibuat_pada",
-    ],
+    columns: [...USERS_COLUMNS],
     codecs: { aktif: booleanCodec, wajib_ganti_password: booleanCodec },
   });
   await users.insertMany([

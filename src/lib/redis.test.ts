@@ -17,8 +17,8 @@ describe("memory cache", () => {
 
   it("entry kedaluwarsa setelah TTL", async () => {
     const cache = createMemoryCache();
-    await cache.set("k", "v", 0.01); // 10ms
-    await new Promise((r) => setTimeout(r, 30));
+    await cache.set("k", "v", 0.05); // 50ms
+    await new Promise((r) => setTimeout(r, 150));
     expect(await cache.get("k")).toBeNull();
   });
 

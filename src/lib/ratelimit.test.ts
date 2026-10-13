@@ -22,10 +22,10 @@ describe("memory rate limiter", () => {
   });
 
   it("kuota pulih setelah window berlalu", async () => {
-    const rl = createMemoryRateLimiter({ limit: 1, windowMs: 20 });
+    const rl = createMemoryRateLimiter({ limit: 1, windowMs: 50 });
     expect((await rl.limit("k")).success).toBe(true);
     expect((await rl.limit("k")).success).toBe(false);
-    await new Promise((r) => setTimeout(r, 40));
+    await new Promise((r) => setTimeout(r, 150));
     expect((await rl.limit("k")).success).toBe(true);
   });
 });

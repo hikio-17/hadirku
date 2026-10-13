@@ -5,9 +5,9 @@ Data tiap sekolah tersimpan di Google Spreadsheet milik sekolah itu sendiri;
 platform hanya menyimpan registry (nama sekolah, email admin, ID sheet, token
 terenkripsi). Bahasa antarmuka: Bahasa Indonesia. Mobile-first.
 
-> Status: **Tahap 2** — registrasi sekolah satu-klik (Google OAuth, provisioning
-> spreadsheet otomatis, tenant-client + cache/lock token, wizard setup).
-> Modul Auth Credentials/RBAC, Guru, Siswa, dan Export menyusul di Tahap 3–9.
+> Status: **Tahap 3** — Auth Credentials + RBAC + middleware tenant + layout
+> aplikasi (sidebar desktop / bottom-nav mobile). Modul Guru, Siswa, Export,
+> dan Admin lanjutan menyusul di Tahap 4–9.
 
 ## Tech stack
 
@@ -52,6 +52,21 @@ profile` + `drive.file` saja, `access_type=offline`, `prompt=consent`).
 Semua baca data sekolah wajib lewat `getTenantContext(slug)` di
 `src/lib/google/tenant-client.ts` (cache token = expires_in − 5 mnt,
 lock Redis saat refresh).
+
+## Login & akses (Tahap 3)
+
+- Login di `/s/[slug]/login` (username unik per sekolah, password bcrypt).
+  Rate limit per slug+username+IP dicek sebelum verifikasi.
+- Sesi JWT Auth.js v5 (12 jam): `{ id, username, role, schoolId, slug,
+mustChange }` — tanpa `password_hash`. Google OAuth tidak lewat Auth.js
+  (butuh refresh token persisten + scope drive.file, lihat Tahap 2).
+- `middleware.ts` (Edge, via `next-auth/jwt`) + layout `(terlindungi)`
+  (Node) menegakkan: wajib login, slug URL == slug sesi (anti lintas
+  sekolah), role per segmen (`admin|guru|siswa`), dan wajib ganti password.
+- Ganti password: `/s/[slug]/ganti-password` (wajib saat login pertama /
+  setelah reset admin), dilanjutkan login ulang agar klaim sesi segar.
+- Reset password oleh admin: `resetPasswordByAdmin()` di
+  `src/lib/services/auth.ts` (UI admin menyusul Tahap 4).
 
 ## Rotasi kunci enkripsi
 

@@ -3,6 +3,20 @@ import "server-only";
 import type { sheets_v4 } from "googleapis";
 
 import { a1 } from "@/lib/storage/sheets/SheetsTable";
+import {
+  ABSENSI_COLUMNS,
+  GURU_COLUMNS,
+  JADWAL_COLUMNS,
+  KELAS_COLUMNS,
+  LOG_PERUBAHAN_COLUMNS,
+  MAPEL_COLUMNS,
+  PENGATURAN_COLUMNS,
+  PENGAJUAN_IZIN_COLUMNS,
+  PENUGASAN_COLUMNS,
+  SISWA_COLUMNS,
+  TAHUN_AJARAN_COLUMNS,
+  USERS_COLUMNS,
+} from "@/lib/storage/sheets/columns";
 
 export interface ProvisionTab {
   name: string;
@@ -14,64 +28,18 @@ export interface ProvisionTab {
  * Header persis skema §4; baris 1 tiap tab = header.
  */
 export const SCHOOL_TABS: ProvisionTab[] = [
-  {
-    name: "users",
-    headers: [
-      "id",
-      "nama",
-      "username",
-      "password_hash",
-      "role",
-      "aktif",
-      "wajib_ganti_password",
-      "dibuat_pada",
-    ],
-  },
-  {
-    name: "guru",
-    headers: ["id", "user_id", "nip", "nama", "is_wali_kelas", "kelas_wali_id", "aktif"],
-  },
-  {
-    name: "siswa",
-    headers: ["id", "user_id", "nis", "nama", "kelas_id", "jenis_kelamin", "aktif"],
-  },
-  { name: "kelas", headers: ["id", "nama", "tingkat", "tahun_ajaran_id"] },
-  { name: "mapel", headers: ["id", "nama", "kode"] },
-  { name: "penugasan", headers: ["id", "guru_id", "kelas_id", "mapel_id", "tahun_ajaran_id"] },
-  { name: "jadwal", headers: ["id", "penugasan_id", "hari", "jam_mulai", "jam_selesai"] },
-  {
-    name: "absensi",
-    headers: [
-      "id",
-      "tanggal",
-      "jadwal_id",
-      "siswa_id",
-      "status",
-      "catatan",
-      "diinput_oleh",
-      "diinput_pada",
-      "diubah_pada",
-    ],
-  },
-  {
-    name: "pengajuan_izin",
-    headers: [
-      "id",
-      "siswa_id",
-      "tanggal",
-      "jenis",
-      "alasan",
-      "url_bukti",
-      "status",
-      "diproses_oleh",
-    ],
-  },
-  {
-    name: "log_perubahan",
-    headers: ["id", "tabel", "record_id", "aksi", "data_lama", "data_baru", "oleh", "waktu"],
-  },
-  { name: "tahun_ajaran", headers: ["id", "nama", "semester", "aktif"] },
-  { name: "pengaturan", headers: ["kunci", "nilai"] },
+  { name: "users", headers: [...USERS_COLUMNS] },
+  { name: "guru", headers: [...GURU_COLUMNS] },
+  { name: "siswa", headers: [...SISWA_COLUMNS] },
+  { name: "kelas", headers: [...KELAS_COLUMNS] },
+  { name: "mapel", headers: [...MAPEL_COLUMNS] },
+  { name: "penugasan", headers: [...PENUGASAN_COLUMNS] },
+  { name: "jadwal", headers: [...JADWAL_COLUMNS] },
+  { name: "absensi", headers: [...ABSENSI_COLUMNS] },
+  { name: "pengajuan_izin", headers: [...PENGAJUAN_IZIN_COLUMNS] },
+  { name: "log_perubahan", headers: [...LOG_PERUBAHAN_COLUMNS] },
+  { name: "tahun_ajaran", headers: [...TAHUN_AJARAN_COLUMNS] },
+  { name: "pengaturan", headers: [...PENGATURAN_COLUMNS] },
 ];
 
 /** Operasi Sheets minimal untuk provisioning (mudah di-mock di test). */
