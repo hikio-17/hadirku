@@ -63,6 +63,12 @@ export default function Home() {
             Documentation
           </a>
         </div>
+        <p className="mt-6 text-base">
+          Operator sekolah?{" "}
+          <a href="/daftar" className="font-medium underline underline-offset-4">
+            Daftarkan sekolah Anda
+          </a>
+        </p>
       </main>
     </div>
   );

@@ -5,9 +5,9 @@ Data tiap sekolah tersimpan di Google Spreadsheet milik sekolah itu sendiri;
 platform hanya menyimpan registry (nama sekolah, email admin, ID sheet, token
 terenkripsi). Bahasa antarmuka: Bahasa Indonesia. Mobile-first.
 
-> Status: **Tahap 1** — fondasi project + layer data (crypto, Redis, `Repository`,
-> `SheetsTable`, `RegistryRepo`). Modul Auth, Guru, Siswa, dan Export menyusul
-> di Tahap 2–9.
+> Status: **Tahap 2** — registrasi sekolah satu-klik (Google OAuth, provisioning
+> spreadsheet otomatis, tenant-client + cache/lock token, wizard setup).
+> Modul Auth Credentials/RBAC, Guru, Siswa, dan Export menyusul di Tahap 3–9.
 
 ## Tech stack
 
@@ -34,6 +34,35 @@ pnpm build   # production build
 
 Tanpa kredensial Google/Upstash, aplikasi tetap bisa di-test: Redis memakai
 fallback memory lokal dan client Google di-mock di unit test.
+
+## Registrasi sekolah (Tahap 2)
+
+1. Operator buka `/daftar` → "Daftar dengan Google" (scope: `openid email
+profile` + `drive.file` saja, `access_type=offline`, `prompt=consent`).
+2. Callback tukar code → refresh token (terenkripsi AES-256-GCM) → sesi setup
+   30 menit (cookie hanya berisi ID acak).
+3. Wizard `/setup/wizard`: nama + slug sekolah, tahun ajaran, jam pelajaran,
+   dan akun admin pertama → aplikasi membuat spreadsheet di Drive operator
+   (12 tab + header), seed data awal, dan mencatat di registry.
+4. Selesai → alamat login `/s/[slug]/login` untuk dibagikan ke guru.
+5. Koneksi terputus (`invalid_grant`) → status `perlu_hubungkan_ulang`;
+   hubungkan ulang via `/api/auth/google/reconnect?slug=...` memakai
+   spreadsheet yang sama.
+
+Semua baca data sekolah wajib lewat `getTenantContext(slug)` di
+`src/lib/google/tenant-client.ts` (cache token = expires_in − 5 mnt,
+lock Redis saat refresh).
+
+## Rotasi kunci enkripsi
+
+```bash
+export OLD_TOKEN_ENCRYPTION_KEY="<kunci lama>"
+export TOKEN_ENCRYPTION_KEY="<kunci baru>"  # openssl rand -base64 32
+export GOOGLE_SERVICE_ACCOUNT_EMAIL="..."
+export GOOGLE_PRIVATE_KEY="..."
+export REGISTRY_SHEET_ID="..."
+pnpm keys:rotate
+```
 
 ## Struktur folder
 

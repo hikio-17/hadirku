@@ -114,6 +114,18 @@ export class RegistryRepo {
   }
 
   /**
+   * Simpan refresh token baru (setup ulang / hubungkan ulang / rotasi kunci).
+   * Dipakai dengan spreadsheet yang SAMA (tidak membuat spreadsheet baru).
+   */
+  async updateRefreshToken(
+    schoolId: string,
+    refreshTokenEnc: string,
+    status: StatusSekolah = "aktif"
+  ): Promise<void> {
+    await this.table.update(schoolId, { refresh_token_enc: refreshTokenEnc, status });
+  }
+
+  /**
    * "Putuskan koneksi & hapus token saya": hapus token dari registry.
    * Revoke ke Google dilakukan sebelum memanggil ini (Tahap 8).
    */
