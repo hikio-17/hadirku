@@ -107,6 +107,11 @@ export async function verifyCredentialsProduction(raw: unknown): Promise<SafeUse
 
 export const newPasswordSchema = z.string().min(8, "Password baru minimal 8 karakter.").max(128);
 
+/** Hash bcrypt default (cost 12). Diekspor agar dipakai impor massal juga. */
+export function hashPasswordDefault(password: string): Promise<string> {
+  return bcrypt.hash(password, 12);
+}
+
 export interface ChangePasswordInput {
   userId: string;
   oldPassword: string;

@@ -39,7 +39,7 @@ export function getNavForRole(role: string, slug: string): NavItem[] {
   }
   return [
     { href: `${base}/admin`, label: "Dashboard", icon: LayoutDashboard },
-    { href: `${base}/admin/data`, label: "Manajemen Data", icon: Database, soon: true },
+    { href: `${base}/admin/data`, label: "Manajemen Data", icon: Database },
     { href: `${base}/admin/laporan`, label: "Laporan", icon: FileText, soon: true },
     { href: `${base}/admin/pengaturan`, label: "Pengaturan", icon: Settings, soon: true },
   ];

@@ -5,9 +5,9 @@ Data tiap sekolah tersimpan di Google Spreadsheet milik sekolah itu sendiri;
 platform hanya menyimpan registry (nama sekolah, email admin, ID sheet, token
 terenkripsi). Bahasa antarmuka: Bahasa Indonesia. Mobile-first.
 
-> Status: **Tahap 3** — Auth Credentials + RBAC + middleware tenant + layout
-> aplikasi (sidebar desktop / bottom-nav mobile). Modul Guru, Siswa, Export,
-> dan Admin lanjutan menyusul di Tahap 4–9.
+> Status: **Tahap 4** — modul Admin (CRUD master data, penugasan & jadwal,
+> impor Excel guru/siswa, pengaturan sekolah). Modul Guru, Siswa, dan Export
+> menyusul di Tahap 5–9.
 
 ## Tech stack
 
@@ -67,6 +67,18 @@ mustChange }` — tanpa `password_hash`. Google OAuth tidak lewat Auth.js
   setelah reset admin), dilanjutkan login ulang agar klaim sesi segar.
 - Reset password oleh admin: `resetPasswordByAdmin()` di
   `src/lib/services/auth.ts` (UI admin menyusul Tahap 4).
+
+## Modul admin (Tahap 4)
+
+- `/s/[slug]/admin/data`: akun pengguna (buat, ubah, aktif/nonaktif, reset
+  password), profil guru & siswa (terhubung akun login), kelas, mapel,
+  tahun ajaran (satu aktif), penugasan guru×kelas×mapel, jadwal, pengaturan.
+- Username unik per sekolah; NIP/NIS unik bila diisi. Hapus diblok bila
+  masih dirujuk (kelas→siswa/penugasan, guru→penugasan, dst); akun hanya
+  dinonaktifkan (tak bisa menonaktifkan diri sendiri).
+- Impor Excel: unduh template (`/api/admin/template/guru|siswa`) → unggah
+  (maks 5 MB) → pratinjau + error per nomor baris → konfirmasi (1 append
+  akun + 1 append profil). Batch sementara 10 menit, sekali pakai.
 
 ## Rotasi kunci enkripsi
 
