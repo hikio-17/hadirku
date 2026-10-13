@@ -24,8 +24,8 @@ export function getNavForRole(role: string, slug: string): NavItem[] {
   if (role === "guru") {
     return [
       { href: `${base}/guru`, label: "Ringkasan", icon: LayoutDashboard },
-      { href: `${base}/guru/absensi`, label: "Input Absensi", icon: ClipboardList, soon: true },
-      { href: `${base}/guru/rekap`, label: "Rekap & Riwayat", icon: History, soon: true },
+      { href: `${base}/guru/absensi`, label: "Input Absensi", icon: ClipboardList },
+      { href: `${base}/guru/rekap`, label: "Rekap & Riwayat", icon: History },
       { href: `${base}/guru/laporan`, label: "Laporan", icon: FileText, soon: true },
       { href: `${base}/guru/izin`, label: "Pengajuan Izin", icon: Inbox, soon: true },
     ];

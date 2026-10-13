@@ -300,6 +300,38 @@ export class SheetsTable<T extends Record<string, unknown>> implements Repositor
     });
   }
 
+  /**
+   * Tulis banyak baris (patch berbeda per baris) dalam SATU batchUpdate.
+   * Baris tanpa id atau yang tidak ada di sheet dilewati.
+   * Dipakai simpan absensi satu kelas agar hemat request Google.
+   */
+  async bulkUpdate(rows: T[]): Promise<number> {
+    if (rows.length === 0) return 0;
+    return this.withWriteLock(async () => {
+      const loaded = await this.load();
+      const byId = new Map(loaded.map((l) => [String(l.row[this.idColumn]), l]));
+      const updates: SheetsBatchUpdateItem[] = [];
+      const lastCol = colLetter(this.opts.columns.length - 1);
+      let count = 0;
+      for (const row of rows) {
+        const id = String(row[this.idColumn] ?? "");
+        const target = id === "" ? undefined : byId.get(id);
+        if (!target) continue;
+        target.row = row;
+        updates.push({
+          range: a1(this.sheet, `A${target.rowNumber}:${lastCol}${target.rowNumber}`),
+          values: [this.encodeRow(row)],
+        });
+        count += 1;
+      }
+      if (updates.length > 0) {
+        await this.withRetry(() => this.client.batchUpdate(this.spreadsheetId, updates));
+        await this.invalidate();
+      }
+      return count;
+    });
+  }
+
   async softDelete(id: string): Promise<void> {
     const hasAktif = (this.opts.columns as string[]).includes("aktif");
     if (hasAktif) {
