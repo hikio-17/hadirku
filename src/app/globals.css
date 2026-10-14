@@ -1,5 +1,24 @@
 @import "tailwindcss";
 
+/* TODO(desain): selaraskan nilai dengan frame "Design System — Absensi Siswa"
+   di pen.dev (aplikasi pen.dev sedang offline saat token ini ditulis).
+   Semua komponen memakai var brand-* agar koreksi cukup di satu file. */
+@theme {
+  --color-brand-50: #eff6ff;
+  --color-brand-100: #dbeafe;
+  --color-brand-200: #bfdbfe;
+  --color-brand-500: #2563eb;
+  --color-brand-600: #1d4ed8;
+  --color-brand-700: #1e40af;
+  --color-brand-950: #172554;
+  --color-accent-500: #14b8a6;
+  --color-accent-600: #0d9488;
+  --color-hadir-600: #16a34a;
+  --color-izin-500: #f59e0b;
+  --color-sakit-600: #0284c7;
+  --color-alpha-600: #dc2626;
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
